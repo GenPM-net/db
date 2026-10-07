@@ -1,8 +1,8 @@
 import { eq, sql } from 'drizzle-orm';
 import { pgTable, text } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
-import { testDb } from './__fixtures__/pglite.js';
-import { createDb, getDb, newId, primaryId, timestamps, ulid, ulidTime, withTransaction } from './index.js';
+import { testDb } from './__fixtures__/pglite.ts';
+import { createDb, getDb, newId, primaryId, timestamps, ulid, ulidTime, withTransaction } from './index.ts';
 
 const notes = pgTable('notes', { id: primaryId('note'), body: text('body').notNull(), ...timestamps });
 
@@ -47,8 +47,9 @@ describe('database helpers', () => {
     const rows = await db.select().from(notes);
     expect(rows.map((r) => r.body)).toEqual(['kept']);
     expect(getDb()).toBe(db);
-    const res = (await db.execute(sql`select 1 as n`)) as unknown as { rows: Array<{ n: number }> };
-    expect(res.rows[0]?.n).toBe(1);
+    // PGlite devuelve { rows }, postgres-js un array: el código de los paquetes acepta ambos.
+    const res = (await db.execute(sql`select 1 as n`)) as unknown as { rows: Array<{ n: number }> } | Array<{ n: number }>;
+    expect((Array.isArray(res) ? res : res.rows)[0]?.n).toBe(1);
   });
 
   it('createDb needs DATABASE_URL', () => {
